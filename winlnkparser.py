@@ -100,6 +100,31 @@ def lnk_show_win(showwin):
     else:
         return "SW_SHOWNORMAL (default)"
 
+# This function parses the High Byte section of the hotkey value
+
+def lnk_hot_key_high(hotkey_high):
+    hotkey = { "0x0" : "None",
+              "0x1" : "Shift",
+              "0x2" : "Ctrl",
+              "0x3" : "Shift + Ctrl",
+              "0x4" : "Alt",
+             "0x5" : "Shift + Alt", 
+             "0x6" : "Ctrl + Alt" }
+    bits_hotkey = BitArray(hex(hotkey_high))
+    return hotkey[str(bits_hotkey)]
+
+# This function parses out the Low Byte section of the hotkey value
+
+def lnk_hot_key_low(hotkey):
+    return chr(hotkey)
+
+# This function parses out the hotkey data; it passes it on to two other functions
+
+def lnk_hot_key_parse(hotkey):
+    hotkey_one = lnk_hot_key_high(hotkey[1])
+    hotkey_two = lnk_hot_key_low(hotkey[0])
+    return hotkey_one, hotkey_two
+
 # This function parses the LNK file header data
 
 def lnk_file_header(header_data):
@@ -130,7 +155,8 @@ def lnk_file_header(header_data):
     lnk_header_file_size = struct.unpack("<L", header_data[52:56])
     lnk_header_icon_indx = struct.unpack("<L", header_data[56:60])
     lnk_header_show_window = struct.unpack("<L", header_data[60:64])
-    lnk_header_hot_key = struct.unpack("<H", header_data[64:66])
+    lnk_header_hot_key = struct.unpack("<2B", header_data[64:66])
+    hot_key = lnk_hot_key_parse(lnk_header_hot_key)
 
     print "Header size: {} (integer: {})".format(hex(lnk_header_size[0]), lnk_header_size[0])
     print "Header CLSID: {}".format(lnk_header_clsid)
@@ -142,9 +168,9 @@ def lnk_file_header(header_data):
     print "Target Access Time: {}".format(lnk_header_access_time)
     print "Target Write Time: {}".format(lnk_header_write_time)
     print "Target File Size: {}".format(lnk_header_file_size[0])
-    print lnk_header_icon_indx[0]
+    print "Icon Index: {}".format(lnk_header_icon_indx[0])
     print "Show Window Value: {}".format(lnk_show_win(hex(lnk_header_show_window[0])))
-    print lnk_header_hot_key[0]
+    print "Hot Key: {} {}".format(hot_key[0], hot_key[1])
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-f', dest='lnk_file', required=True, help='LNK file to process.')
